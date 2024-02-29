@@ -29,7 +29,7 @@ function App() {
         {
             operationIdentifier: "*",
             operationVerifier: (a: number, b: number) => a * b,
-            operationGenerator: (level: number) => [Math.floor(Math.random() * 10 * level), Math.floor(Math.random() * 10 * level)]
+            operationGenerator: (level: number) => [Math.floor(Math.random() * 10 * level)+1, Math.floor(Math.random() * 10 * Math.floor(level/3))]
         },
         {
             operationIdentifier: "/",
