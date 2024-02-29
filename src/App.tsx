@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import './App.css'
 
 const LVL = 1;
@@ -52,6 +52,32 @@ function App() {
     const [lvl, setLvL] = useState(LVL);
     const [gameOverAt, setGameOverAt] = useState(-1);
     const [progressToGameOver, setProgressToGameOver] = useState(0);
+    const [highScore, setHighScore] = useState(0);
+    const [failCounter, setFailCounter] = useState(0);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const hs = parseInt(localStorage.getItem("highscore") ?? "0");
+        const fails =  parseInt(localStorage.getItem("fails") ?? "0");
+
+        if(hs !== 0)
+            setHighScore(hs);
+        if(fails !== 0)
+        setFailCounter(fails);
+
+        const keypress = () => {
+            if(inputRef.current)
+            {
+                inputRef.current.focus();
+            }
+        }
+
+        window.addEventListener("keypress", keypress);
+
+        return () => {
+            window.removeEventListener("keypress", keypress);
+        }
+    }, []);
     const reset = () => {
         const operation = genOperation();
         const numbers = operation.operationGenerator(lvl);
@@ -63,6 +89,17 @@ function App() {
         if (started && gameOverAt !== -1) {
             if (new Date().getTime() >= gameOverAt) {
                 setStarted(false);
+                const storedPoints = localStorage.getItem("highscore") ?? "0";
+                if(parseInt(storedPoints) < points)
+                {
+                    localStorage.setItem("highscore", points.toString());
+                    setHighScore(points);
+                    setFailCounter((fc) => {
+                        const r = fc + 1;
+                        localStorage.setItem("fails", r.toString());
+                        return r;
+                    } )
+                }
             } else {
                 setProgressToGameOver((gameOverAt - new Date().getTime()) / 5000);
             }
@@ -97,20 +134,25 @@ function App() {
 
     return (
         <>
-            <div id={"logoContainer"}></div>
-            <img style={{width: "16rem"}} src={"sigma.png"} alt={"Logo"}/>
-            {started ? (<><p>Twój wynik: {points}</p>
-                <div style={{height: "1rem", width: `${100 * progressToGameOver}px`, backgroundColor: "red"}}></div>
-                <p>Twój LVL: {lvl}</p>
-                <p>{numbers?.[0]}{operation?.operationIdentifier}{numbers?.[1]}</p>
-                <input value={input} onChange={(event) => {
-                    setInput(event.target.value)
-                }}></input></>) : <>
-                <p>Twój wynik: {points}</p>
-                <p>Twój LVL: {lvl}</p>
-                <button onClick={startGame}>Start Game
-                </button>
-            </>}
+            <div id={"logoContainer"}>
+                <img style={{width: "16rem"}} src={"sigma.png"} alt={"Logo"}/>
+            </div>
+            <div id={"gameContainer"}>
+                {started ? (<><p>Twój wynik: {points}</p>
+                    <div style={{height: "1rem", width: `${100 * progressToGameOver}px`, backgroundColor: "red"}}></div>
+                    <p>Twój LVL: {lvl}</p>
+                    <p>{numbers?.[0]}{operation?.operationIdentifier}{numbers?.[1]}</p>
+                    <input ref={inputRef} value={input} onChange={(event) => {
+                        setInput(event.target.value)
+                    }}></input></>) : <>
+                    <h2>POWSTRZYMAJ DONOS</h2>
+                    <h3>ROZWIĄZUJ OPERACJE MATEMATYCZNE ABY COFNĄC MIESZKAŃCA PŁOCKA OD KOMENDY</h3>
+                    <p>Statystyki</p>
+                    <p>Ocalone donosy: {points} (HIGH SCORE: {highScore})</p>
+                    <p>Zjedzone makowce: {failCounter}</p>
+                    <button onClick={startGame}>JAZDA!</button>
+                </>}
+            </div>
         </>
     )
 }
